@@ -1,7 +1,7 @@
 
 # druid-cli
 
-[Druid](http://druid.io/) data does some incredible things and 
+[Druid](http://druid.io/) data store does some incredible things and 
 at the same time is a piece of software that can come in your
 darkest nightmares.
 

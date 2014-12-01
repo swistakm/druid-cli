@@ -55,7 +55,7 @@ PACKAGES = find_packages('.')
 PACKAGE_DIR = {'': 'src'}
 
 setup(
-    name='druid_cli',
+    name='druid-cli',
     version=VERSION,
     author='Michał Jaworski',
     author_email='swistakm@gmail.com',
