@@ -3,9 +3,11 @@ import json
 
 import click
 import time
+from druid_cli import tasks
 
 from druid_cli.druid import DruidMixedAPI
 from druid_cli.types import LOCATION
+from druid_cli.decorators import explain_errors
 
 INDENT = 3
 
@@ -32,16 +34,18 @@ def datasource():
     pass
 
 
-@datasource.command(name="list")
+@datasource.command(name="list", help="print all available datasources")
 @click.pass_context
+@explain_errors
 def list_(ctx):
     api = ctx.obj['api']
     click.echo(json.dumps(api.get_datasources(), indent=INDENT))
 
 
-@datasource.command()
+@datasource.command(help="print details about given (or all) datasources")
 @click.pass_context
 @click.argument('datasources', nargs=-1)
+@explain_errors
 def details(ctx, datasources):
     api = ctx.obj['api']
     available_datasources = api.get_datasources()
@@ -62,6 +66,7 @@ def server():
 
 @server.command(name="list", help="print list of servers")
 @click.pass_context
+@explain_errors
 def list_(ctx):
     api = ctx.obj['api']
     click.echo(json.dumps(api.get_servers(), indent=INDENT))
@@ -70,6 +75,7 @@ def list_(ctx):
 @server.command(help="print details of each server")
 @click.pass_context
 @click.argument('servers', nargs=-1)
+@explain_errors
 def details(ctx, servers):
     api = ctx.obj['api']
     available_servers = api.get_servers()
@@ -83,9 +89,10 @@ def details(ctx, servers):
     click.echo(json.dumps(output, indent=INDENT))
 
 
-@server.command()
+@server.command(help="print lists of segments in given (or all) servers")
 @click.pass_context
 @click.argument('servers', nargs=-1)
+@explain_errors
 def segments(ctx, servers):
     api = ctx.obj['api']
     available_servers = api.get_servers()
@@ -99,10 +106,16 @@ def segments(ctx, servers):
     click.echo(json.dumps(output, indent=INDENT))
 
 
-@server.command()
+@server.command(short_help="wait for epmty servers",
+                help="Wait until there is no segments on given (or all) servers"
+                     " or timeout uccured. druid-cli exits with 1 if timeout occured")
 @click.pass_context
-@click.option('--timeout', type=click.INT,  default=None, help="wait timeout in seconds",)
+@click.option('--timeout',
+              type=click.INT,
+              default=None,
+              help="wait timeout in seconds, 0 if no timeout (default)")
 @click.argument('servers', nargs=-1)
+@explain_errors
 def waitempty(ctx, timeout, servers):
     api = ctx.obj['api']
     available_servers = api.get_servers()
@@ -132,6 +145,62 @@ def rule():
 
 @rule.command(name='list', help="print list of all rules")
 @click.pass_context
+@explain_errors
 def list_(ctx):
     api = ctx.obj['api']
     click.echo(json.dumps(api.get_rules(), indent=INDENT))
+
+
+@cli.group(help="note: requires druid overlord node")
+def task():
+    pass
+
+
+@task.command(name='list', help="print list of all tasks")
+@click.pass_context
+@explain_errors
+def list_(ctx):
+    api = ctx.obj['api']
+    click.echo(json.dumps(api.get_tasks(), indent=INDENT))
+
+
+@task.group(help="submit tasks to druid overlord")
+def submit():
+    pass
+
+
+@submit.command(short_help="submit noop task",
+                help="Submit noop task that does nothing. This is useful for testing.")
+@click.pass_context
+@explain_errors
+def noop(ctx):
+    api = ctx.obj['api']
+    click.echo(
+        json.dumps(api.post_task(tasks.NoopTask()), indent=INDENT)
+    )
+
+
+@submit.command(short_help="submit kill task",
+                help="Submit kill task that removes all segments data for given datasources. Use with caution!")
+@click.pass_context
+@click.argument('datasource',)
+@explain_errors
+def kill(ctx, datasource):
+    api = ctx.obj['api']
+    task_to_submit = tasks.KillTask(datasource)
+    click.echo(
+        json.dumps(api.post_task(task_to_submit), indent=INDENT)
+    )
+
+
+@submit.command(short_help="submit delete task",
+                help="Submit detele task that creates empty segment with no data")
+@click.pass_context
+@click.argument('datasource',)
+@explain_errors
+def delete(ctx, datasource):
+    api = ctx.obj['api']
+    task_to_submit = tasks.DeleteTask(datasource)
+    click.echo(
+        json.dumps(api.post_task(task_to_submit), indent=INDENT)
+    )

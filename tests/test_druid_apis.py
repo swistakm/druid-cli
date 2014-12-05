@@ -29,7 +29,7 @@ def test_get_datasource_metrics():
 def test_get_datasource_dimensions():
     datasources = api.get_datasources()
     dimensions = api.get_datasource_dimensions(datasources[0])
-    assert dimensions
+    assert isinstance(dimensions, list)
 
 
 def test_get_servers():
@@ -52,3 +52,10 @@ def test_get_server_segments():
 def test_get_rules():
     rules = api.get_rules()
     assert rules
+
+
+def test_get_tasks():
+    tasks = api.get_tasks()
+    print tasks
+    assert tasks
+    assert isinstance(tasks, dict)

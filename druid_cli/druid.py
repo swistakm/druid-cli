@@ -3,6 +3,8 @@ import urlparse
 
 import requests
 
+from druid_cli import errors
+
 
 class DruidEndpoint(object):
     endpoint_path = None
@@ -11,21 +13,42 @@ class DruidEndpoint(object):
         self.endpoint_path = endpoint_path
         self.base_url = urlparse.urljoin(url, self.endpoint_path)
 
-    def get(self, resource, **payload):
+    def get(self, resource, **params):
         resource_url = urlparse.urljoin(self.base_url, resource)
-        return requests.get(resource_url, params=payload)
+        response = requests.get(resource_url, **params)
+        self._raise_for_status(response)
+        return response
 
-    def post(self, resource, **payload):
+    def post(self, resource, **params):
         resource_url = urlparse.urljoin(self.base_url, resource)
-        return requests.get(resource_url, params=payload)
+        response = requests.post(resource_url, **params)
+        self._raise_for_status(response)
+        return response
 
-    def delete(self, resource, **payload):
+    def delete(self, resource, **params):
         resource_url = urlparse.urljoin(self.base_url, resource)
-        return requests.get(resource_url, params=payload)
+        response = requests.delete(resource_url, **params)
+        self._raise_for_status(response)
+        return response
 
-    def put(self, resource, **payload):
+    def put(self, resource, **params):
         resource_url = urlparse.urljoin(self.base_url, resource)
-        return requests.get(resource_url, params=payload)
+        response = requests.put(resource_url, **params)
+        self._raise_for_status(response)
+        return response
+
+    def _raise_for_status(self, response):
+        """ Check if response has valid status code and raise specific druid-cli
+        exception
+
+        :param response: Druid http response object
+        :type response: requests.Response
+        :return: None
+        """
+        try:
+            response.raise_for_status()
+        except requests.HTTPError, err:
+            raise errors.DruidApiEndpointException(err.message, response)
 
 
 class DruidMixedAPI(object):
@@ -39,6 +62,7 @@ class DruidMixedAPI(object):
         self.broker_url = broker_url or self.DEFAULT_BROKER_URL
 
         self.overlord = DruidEndpoint(self.overlord_url, 'druid/v2/')
+        self.indexer = DruidEndpoint(self.overlord_url, 'druid/indexer/v1/')
         self.coordinator = DruidEndpoint(self.coordinator_url, 'druid/coordinator/v1/')
         self.broker = DruidEndpoint(self.broker_url, 'druid/v2/')
 
@@ -82,3 +106,17 @@ class DruidMixedAPI(object):
             'rules'
         ).json()
 
+    def get_tasks(self):
+        return {
+            "running": self.indexer.get('runningTasks').json(),
+            "pending": self.indexer.get('pendingTasks').json(),
+            "waiting": self.indexer.get('waitingTasks').json(),
+            "complete": self.indexer.get('completeTasks').json(),
+        }
+
+    def post_task(self, task):
+        return self.indexer.post(
+            'task',
+            data=task.as_json(),
+            headers={'content-type': 'application/json'}
+        ).json()

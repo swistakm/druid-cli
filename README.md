@@ -43,6 +43,7 @@ Commands:
   datasource  note: requires druid broker node
   rule        note: requires druid coordinator node
   server      note: requires druid coordinator node
+  task        note: requires druid overlord node
 ```
 
 druid-cli assumes that each type of druid nodes listens on
@@ -63,6 +64,18 @@ For more detailed usage on commands use `druid-cli <command> --help`
 ## Contributions
 
 Contributions are very welcome.
+
+## Changelist
+
+### 0.2.0 (2014-12-05)
+- support for submitting delete task
+
+### 0.1.0 (2014-12-03)
+- errors from druid API endpoints are now nicely formatted
+- some errors can give hints about what is incorrect
+  (currently only http 404 errors)
+- `html2text` added to requirements
+- initial tasks support (kill and noop)
 
 ## Licence
 
