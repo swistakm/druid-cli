@@ -6,7 +6,7 @@ import time
 from druid_cli import tasks
 
 from druid_cli.druid import DruidMixedAPI
-from druid_cli.types import LOCATION
+from druid_cli.types import LOCATION, INTERVAL
 from druid_cli.decorators import explain_errors
 
 INDENT = 3
@@ -22,10 +22,13 @@ INDENT = 3
 @click.option('--broker', default=None, type=LOCATION,
               envvar="DRUID_BROKER",
               help="Hostname and port of broker node")
+@click.option('-y', '--assume-yes', default=False, is_flag=True,
+              help="Assume 'yes' on any interactive question")
 @click.pass_context
-def cli(ctx, overlord, coordinator, broker):
+def cli(ctx, overlord, coordinator, broker, assume_yes):
     ctx.obj = {
-        'api': DruidMixedAPI(overlord, coordinator, broker)
+        'api': DruidMixedAPI(overlord, coordinator, broker),
+        'assume_yes': assume_yes
     }
 
 
@@ -180,27 +183,44 @@ def noop(ctx):
     )
 
 
+
+interval_argument = click.argument(
+    'interval',
+    type=INTERVAL,
+    help="ISO formatted interval like 2010-10-10/2012-10-10 or one of those labels: {}".format(INTERVAL.ALL_TIME_LABELS)
+)
+
 @submit.command(short_help="submit kill task",
-                help="Submit kill task that removes all segments data for given datasources. Use with caution!")
+                help="Submit kill task that removes all "
+                     "segments data for given datasources. "
+                     "INTERVAL should be ISO formatted like: "
+                     "2010-10-10/2012-10-10 or one of those "
+                     "labels: {}. Use with caution!".format(INTERVAL.ALL_TIME_LABELS))
 @click.pass_context
 @click.argument('datasource',)
+@click.argument('interval', type=INTERVAL)
 @explain_errors
-def kill(ctx, datasource):
+def kill(ctx, datasource, interval):
     api = ctx.obj['api']
-    task_to_submit = tasks.KillTask(datasource)
+
+    task_to_submit = tasks.KillTask(datasource, interval=interval)
     click.echo(
         json.dumps(api.post_task(task_to_submit), indent=INDENT)
     )
 
 
 @submit.command(short_help="submit delete task",
-                help="Submit detele task that creates empty segment with no data")
+                help="Submit detele task that creates empty segment with no data."
+                     "INTERVAL should be ISO formatted like: "
+                     "2010-10-10/2012-10-10 or one of those "
+                     "labels: {}. Use with caution!".format(INTERVAL.ALL_TIME_LABELS))
 @click.pass_context
 @click.argument('datasource',)
+@click.argument('interval', type=INTERVAL)
 @explain_errors
-def delete(ctx, datasource):
+def delete(ctx, datasource, interval):
     api = ctx.obj['api']
-    task_to_submit = tasks.DeleteTask(datasource)
+    task_to_submit = tasks.DeleteTask(datasource, interval=None)
     click.echo(
         json.dumps(api.post_task(task_to_submit), indent=INDENT)
     )

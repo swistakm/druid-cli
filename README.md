@@ -67,6 +67,9 @@ Contributions are very welcome.
 
 ## Changelist
 
+### 0.3.0 (2014-12-09)
+- submitting tasks now requires specifying interval
+
 ### 0.2.0 (2014-12-05)
 - support for submitting delete task
 
