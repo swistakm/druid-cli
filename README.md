@@ -67,6 +67,9 @@ Contributions are very welcome.
 
 ## Changelist
 
+### 0.3.1 (2014-12-10)
+- fixed project requirements (`python-dateutil` added)
+
 ### 0.3.0 (2014-12-09)
 - submitting tasks now requires specifying interval
 

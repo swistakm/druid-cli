@@ -1,3 +1,4 @@
 requests
 html2text
 Click
+python-dateutil
